@@ -37,8 +37,8 @@ export default function EachOption({
         />
       </div>
       <div
-        className={`${isCorrect ? "bg-green-600" : ""} ${
-          selected ? "bg-red-500" : ""
+        className={`${isCorrect && selected ? "bg-green-600" : ""} ${
+          selected && !isCorrect ? "bg-red-500" : ""
         } sm:w-[45%] w-[90%] float-left text-[18px] p-[2px] pl-2 rounded-lg`}
       >
         {option}
