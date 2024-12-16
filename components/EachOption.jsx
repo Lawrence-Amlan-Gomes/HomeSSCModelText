@@ -22,8 +22,7 @@ export default function EachOption({
       } else {
         setSelected(false);
       }
-    }else{
-        
+    } else {
     }
   }, [activeCircle, correctAns, isSubmitted, option]);
   return (
@@ -33,12 +32,14 @@ export default function EachOption({
           activeCircle={activeCircle}
           setActiveCircle={setActiveCircle}
           id={option}
-          isSubmitted = {isSubmitted}
+          isSubmitted={isSubmitted}
         />
       </div>
       <div
         className={`${isCorrect && selected ? "bg-green-600" : ""} ${
           selected && !isCorrect ? "bg-red-500" : ""
+        } ${
+          !selected && isCorrect ? "bg-green-600" : ""
         } sm:w-[45%] w-[90%] float-left text-[18px] p-[2px] pl-2 rounded-lg`}
       >
         {option}
