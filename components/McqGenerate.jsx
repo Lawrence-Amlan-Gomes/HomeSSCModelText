@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import EachMcq from "./EachMcq";
-import response from "@/app/server";
+import { response } from "@/app/server";
 import chemistry from "@/app/mcqdatabase/chemistry";
 
 export default function McqGenerate({subject}) {
@@ -16,8 +16,8 @@ export default function McqGenerate({subject}) {
     setGenerateButton("Generating...");
     const res = await response(
       chemistry.chapter1 +
-        " [ generate 10 mcq from this paragraph outside of these bracket in a javascript array of objects style string.\
-        In the object there will 6 key and values, id, question, correctAns, wrongAnswer1, wrongAnswer2, wrongAnswer3]. Give me only the array. I repeat give me only the array and don't need to write anything before and after the array"
+        ' [ generate 10 mcq from this paragraph outside of these bracket in a javascript array of objects style string. ' +
+        'In the object there will 6 key and values, id, question, correctAns, wrongAnswer1, wrongAnswer2, wrongAnswer3]. Give me only the array. I repeat give me only the array and don\'t need to write anything before and after the array'
     );
     if (res) {
       setGenerateButton("Generated");
@@ -26,106 +26,30 @@ export default function McqGenerate({subject}) {
   };
 
   useEffect(() => {
-    let str2 = "";
-    let fidx = 0;
-    let lidx = 0;
-    let cleanStr = "";
-    const result = [];
     if (aiResponse) {
-      for (let i of aiResponse) {
-        str2 = str2 + i;
+      const start = aiResponse.indexOf("[");
+      const end = aiResponse.lastIndexOf("]") + 1;
+      if (start !== -1 && end > start) {
+        let cleanStr = aiResponse.slice(start, end);
+        cleanStr = cleanStr
+          .replace(/[\n\r]/g, "")
+          .replace(/\s{2,}/g, " ")
+          .replace(/,\s*}/g, "}")
+          .replace(/,\s*]/g, "]");
+        try {
+          const result = JSON.parse(cleanStr);
+          const updatedArray = result.map((item, index) => ({
+            ...item,
+            id: index + 1,
+          }));
+          setMcqs(updatedArray);
+          console.log(updatedArray);
+        } catch (e) {
+          console.error("JSON parse error:", e);
+        }
+      } else {
+        console.error("Could not find array in response");
       }
-      for (let j of str2) {
-        if (j == "[") {
-          break;
-        }
-        fidx++;
-      }
-      for (let k of str2) {
-        if (k == "]") {
-          lidx = lidx - str2.length + 1;
-          break;
-        }
-        lidx++;
-      }
-      cleanStr = str2.slice(fidx, lidx);
-      console.log(cleanStr);
-      let cleanedData = cleanStr
-        .replace(/[\n\r]/g, "") // Remove newlines
-        .replace(/\s{2,}/g, " ") // Remove extra spaces
-        .replace(/,\s*}/g, "}") // Remove trailing commas before closing braces
-        .replace(/,\s*]/g, "]"); // Remove trailing commas before closing brackets
-
-      // Step 2: Manually convert to array of objects
-      let result = [];
-      let currentObject = {};
-      let inQuotes = false;
-      let key = "";
-      let value = "";
-      let isKey = true;
-
-      // Loop through cleanedData content within brackets
-      let insideBrackets = false;
-      for (let i = 0; i < cleanedData.length; i++) {
-        let char = cleanedData[i];
-
-        if (char === "[") {
-          insideBrackets = true;
-          continue;
-        }
-        if (char === "]") {
-          insideBrackets = false;
-          if (Object.keys(currentObject).length > 0) {
-            result.push(currentObject);
-          }
-          break;
-        }
-        if (!insideBrackets) continue;
-
-        if (char === "{") {
-          currentObject = {};
-          isKey = true;
-          key = "";
-          value = "";
-          continue;
-        }
-        if (char === "}") {
-          if (key && value !== "") {
-            currentObject[key] = isNaN(value) ? value : Number(value); // Convert numeric values
-          }
-          result.push(currentObject);
-          currentObject = {};
-          continue;
-        }
-
-        if (char === '"' && cleanedData[i - 1] !== "\\") {
-          inQuotes = !inQuotes;
-          continue;
-        }
-
-        if (inQuotes) {
-          if (isKey) key += char;
-          else value += char;
-        } else {
-          if (char === ":" && isKey) {
-            isKey = false;
-            value = "";
-          } else if (char === "," && !isKey) {
-            currentObject[key] = isNaN(value) ? value : Number(value); // Convert numeric values
-            isKey = true;
-            key = "";
-            value = "";
-          }
-        }
-      }
-      const updatedArray = result.map((item, index) => {
-        return {
-          ...item, // Copy existing properties
-          id: index + 1, // Assign IDs starting from 1
-        };
-      });
-      setMcqs(updatedArray);
-      console.log(updatedArray);
     }
   }, [aiResponse]);
 
@@ -138,77 +62,17 @@ export default function McqGenerate({subject}) {
       .replace(/\s{2,}/g, " ") // Remove extra spaces
       .replace(/,\s*}/g, "}") // Remove trailing commas before closing braces
       .replace(/,\s*]/g, "]"); // Remove trailing commas before closing brackets
-
-    // Step 2: Manually convert to array of objects
-    let result = [];
-    let currentObject = {};
-    let inQuotes = false;
-    let key = "";
-    let value = "";
-    let isKey = true;
-
-    // Loop through cleanedData content within brackets
-    let insideBrackets = false;
-    for (let i = 0; i < cleanedData.length; i++) {
-      let char = cleanedData[i];
-
-      if (char === "[") {
-        insideBrackets = true;
-        continue;
-      }
-      if (char === "]") {
-        insideBrackets = false;
-        if (Object.keys(currentObject).length > 0) {
-          result.push(currentObject);
-        }
-        break;
-      }
-      if (!insideBrackets) continue;
-
-      if (char === "{") {
-        currentObject = {};
-        isKey = true;
-        key = "";
-        value = "";
-        continue;
-      }
-      if (char === "}") {
-        if (key && value !== "") {
-          currentObject[key] = isNaN(value) ? value : Number(value); // Convert numeric values
-        }
-        result.push(currentObject);
-        currentObject = {};
-        continue;
-      }
-
-      if (char === '"' && cleanedData[i - 1] !== "\\") {
-        inQuotes = !inQuotes;
-        continue;
-      }
-
-      if (inQuotes) {
-        if (isKey) key += char;
-        else value += char;
-      } else {
-        if (char === ":" && isKey) {
-          isKey = false;
-          value = "";
-        } else if (char === "," && !isKey) {
-          currentObject[key] = isNaN(value) ? value : Number(value); // Convert numeric values
-          isKey = true;
-          key = "";
-          value = "";
-        }
-      }
+    try {
+      const result = JSON.parse(cleanedData);
+      const updatedArray = result.map((item, index) => ({
+        ...item,
+        id: index + 1,
+      }));
+      setMcqs(updatedArray);
+      console.log(updatedArray);
+    } catch (e) {
+      console.error("JSON parse error:", e);
     }
-    const updatedArray = result.map((item, index) => {
-      return {
-        ...item, // Copy existing properties
-        id: index + 1, // Assign IDs starting from 1
-      };
-    });
-    setMcqs(updatedArray);
-    console.log(updatedArray);
   };
 
   const AnsSubmit = () => {
