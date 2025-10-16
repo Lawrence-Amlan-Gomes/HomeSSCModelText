@@ -12,7 +12,17 @@ export async function response(prompt) {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const startTime = Date.now();
-    const result = await model.generateContent(prompt);
+
+    // Add a timeout of 8 seconds to avoid hitting Vercel limit
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("API call timed out after 8 seconds")), 8000);
+    });
+
+    const result = await Promise.race([
+      model.generateContent(prompt),
+      timeoutPromise,
+    ]);
+
     const endTime = Date.now();
     console.log(`Gemini API call took ${endTime - startTime}ms`);
     return result.response.text();
@@ -21,6 +31,7 @@ export async function response(prompt) {
       message: error.message,
       stack: error.stack,
       code: error.code || "N/A",
+      promptLength: prompt.length,
     });
     throw new Error(`Failed to generate AI response: ${error.message}`);
   }
