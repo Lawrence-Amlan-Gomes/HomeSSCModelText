@@ -11,10 +11,17 @@ export async function response(prompt) {
 
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const startTime = Date.now();
     const result = await model.generateContent(prompt);
+    const endTime = Date.now();
+    console.log(`Gemini API call took ${endTime - startTime}ms`);
     return result.response.text();
   } catch (error) {
-    console.error("Error generating content:", error.message, error);
+    console.error("Gemini API error:", {
+      message: error.message,
+      stack: error.stack,
+      code: error.code || "N/A",
+    });
     throw new Error(`Failed to generate AI response: ${error.message}`);
   }
 }
